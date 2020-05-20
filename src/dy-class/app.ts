@@ -6,6 +6,8 @@ const DESCENDANTS = Symbol('DESCENDANTS')
 
 type Constructor<T = any> = { new(...args: any[]): T }
 type Factory = Function | Constructor | string
+type Indexable = { [key: string]: any }
+type BaseConstructorParam<T, U = undefined> = Partial<U extends undefined ? T : T | U>
 
 interface PropertiesMeta {
   [key: string]: {
@@ -44,7 +46,7 @@ export function Property(
 }
 
 export class Base<T, U = undefined>{
-  constructor(obj: Partial<U extends undefined ? T : T | U> = {} as T){
+  constructor(obj: BaseConstructorParam<T, U> = {}){
     const properties: PropertiesMeta = Reflect.getMetadata(PROPERTIES_META, this)
     for(const key in properties){
       let { factory, options } = properties[key]
@@ -56,12 +58,12 @@ export class Base<T, U = undefined>{
         factory = descendants[factory]
       }
 
-      if (obj[key] !== undefined || options.required) {
-        const args = obj[key] !== undefined ? [obj[key]] : []
+      if ((obj as Indexable)[key] !== undefined || options.required) {
+        const args = (obj as Indexable)[key] !== undefined ? [(obj as Indexable)[key]] : []
         if(factory.prototype instanceof Base){
-          this[key] = new (factory as Constructor)(...args)
+          (this as Indexable)[key] = new (factory as Constructor)(...args)
         } else {
-          this[key] = (factory as Function)(...args)
+          (this as Indexable)[key] = (factory as Function)(...args)
         }
       }
     }
