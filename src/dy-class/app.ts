@@ -1,9 +1,10 @@
 import 'reflect-metadata'
 
+
 const PROPERTIES_META = Symbol('PROPERTIES_META')
 const DESCENDANTS = Symbol('DESCENDANTS')
 
-type Constructor = { new(...args: any[]): any }
+type Constructor<T = any> = { new(...args: any[]): T }
 type Factory = Function | Constructor | string
 
 interface PropertiesMeta {
@@ -67,6 +68,6 @@ export class Base<T, U = undefined>{
   }
 
   clone(){
-    return new (this.constructor as Constructor)(this)
+    return new (this.constructor as Constructor<T>)(this)
   }
 }
