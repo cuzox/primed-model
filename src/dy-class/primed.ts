@@ -7,11 +7,11 @@ export function PrimedDecimal(value: number | string | Decimal = 0): Decimal {
   return new Decimal(value)
 }
 
-export function PrimedId(value: string): string {
+export function PrimedId(value?: string): string {
   return value ? value : "-1"
 }
 
-export function PrimedUUID(value: string): string {
+export function PrimedUUID(value?: string): string {
   return value ? value : UUID()
 }
 

@@ -1,8 +1,10 @@
 import 'reflect-metadata'
+import _pickBy from 'lodash/pickBy'
 
 
 const PROPERTIES_META = Symbol('PROPERTIES_META')
 const DESCENDANTS = Symbol('DESCENDANTS')
+const SEQUENCE = Symbol('SEQUENCE')
 
 type Constructor<T = any> = { new(...args: any[]): T }
 type Factory = Function | Constructor | string
@@ -22,9 +24,6 @@ interface Descendants {
 
 class PropertyOptions {
   required?: boolean = true
-  args?: any[] = []
-  sub?: string | null = null
-  load?: string | null = null
 }
 
 export const Model = (constructor: Function)=>{
@@ -33,7 +32,7 @@ export const Model = (constructor: Function)=>{
   Reflect.defineMetadata(DESCENDANTS, metadata, Base.constructor)
 }
 
-export function Property(
+export function Primed(
   factory: Factory,
   propertyOptions: PropertyOptions = {}
 ) {
@@ -47,9 +46,15 @@ export function Property(
 
 export class Base<T, U = undefined>{
   constructor(entity: BaseConstructorEntity<T, U> = {}){
-    const properties: PropertiesMeta = Reflect.getMetadata(PROPERTIES_META, this)
-    for(const key in properties){
-      let { factory, options } = properties[key]
+    const primedProperties: PropertiesMeta = Reflect.getMetadata(PROPERTIES_META, this)
+    for(const key in _pickBy((entity as Indexable), (k: string) => !(k in primedProperties))){
+      if(this.hasOwnProperty(key)){
+        (this as Indexable)[key]= (entity as Indexable)[key]
+      }
+    }
+
+    for(const key in primedProperties){
+      let { factory, options } = primedProperties[key]
       if(typeof factory === 'string'){
         const descendants: Descendants = Reflect.getMetadata(DESCENDANTS, Base.constructor)
         if(!descendants[factory]){

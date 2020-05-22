@@ -2,7 +2,7 @@
   "name": "experiment",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "./src/dy-class/base-class.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "base": "npx ts-node -P ./tsconfig.json -T ./src/dy-class/base-class.ts",
@@ -28,6 +28,7 @@
     "lodash": "^4.17.15",
     "luxon": "^1.24.1",
     "reflect-metadata": "^0.1.13",
+    "tslib": "^2.0.0",
     "uuid": "^8.0.0"
   }
 }

@@ -1,15 +1,19 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "module": "esnext",
+    "module": "commonjs",
     "strict": true,
+    "importHelpers": true,
     "moduleResolution": "node",
     "experimentalDecorators": true,
-    // "emitDecoratorMetadata": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "types": [
       "reflect-metadata",
+    ],
+    "lib": [
+      "esnext",
+      "dom",
     ],
   },
   "include":[
