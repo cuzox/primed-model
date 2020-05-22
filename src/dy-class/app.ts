@@ -9,7 +9,7 @@ const SEQUENCE = Symbol('SEQUENCE')
 type Constructor<T = any> = { new(...args: any[]): T }
 type Factory = Function | Constructor | string
 type Indexable = { [key: string]: any }
-type BaseConstructorEntity<T, U = undefined> = Partial<U extends undefined ? T : T | U>
+type BaseConstructorPayload<T, U = undefined> = Partial<U extends undefined ? T : T | U>
 
 interface PropertiesMeta {
   [key: string]: {
@@ -45,11 +45,12 @@ export function Primed(
 }
 
 export class Base<T, U = undefined>{
-  constructor(entity: BaseConstructorEntity<T, U> = {}){
+  constructor(payload: BaseConstructorPayload<T, U> = {}){
     const primedProperties: PropertiesMeta = Reflect.getMetadata(PROPERTIES_META, this)
-    for(const key in _pickBy((entity as Indexable), (k: string) => !(k in primedProperties))){
+    const notPrimed = _pickBy((payload as Indexable), (k: string) => !(k in primedProperties))
+    for(const key in notPrimed){
       if(this.hasOwnProperty(key)){
-        (this as Indexable)[key]= (entity as Indexable)[key]
+        (this as Indexable)[key]= (payload as Indexable)[key]
       }
     }
 
@@ -63,8 +64,8 @@ export class Base<T, U = undefined>{
         factory = descendants[factory]
       }
 
-      if ((entity as Indexable)[key] !== undefined || options.required) {
-        const args = (entity as Indexable)[key] !== undefined ? [(entity as Indexable)[key]] : []
+      if ((payload as Indexable)[key] !== undefined || options.required) {
+        const args = (payload as Indexable)[key] !== undefined ? [(payload as Indexable)[key]] : []
         if(factory.prototype instanceof Base){
           (this as Indexable)[key] = new (factory as Constructor)(...args)
         } else {
