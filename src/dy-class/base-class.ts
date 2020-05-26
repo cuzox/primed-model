@@ -8,6 +8,9 @@ export class Bar extends Base<Bar>{
   @Primed(PrimedDecimal)
   golf!: Decimal
 
+  @Primed('Baz')
+  baz!: Baz
+
   hotel: number = 2
   india: string = "4"
   juliet: string = "4"
@@ -46,8 +49,8 @@ export class Foo extends Base<Foo, FooInput>{
   @Primed('Baz')
   baz!: Baz
 
-  // @Primed(Foo)
-  // parentFoo!: Foo
+  @Primed(Foo)
+  parentFoo!: Foo
 
   @Primed('Baz', {required: false})
   otherBaz?: Baz
@@ -68,6 +71,9 @@ export class Baz extends Base<Baz>{
 
   @Primed(PrimedDecimal)
   november!: Decimal
+
+  @Primed(Bar)
+  bar!: Bar
 
   oscar: string = ""
   papa: string = "4"

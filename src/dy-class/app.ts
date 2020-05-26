@@ -4,7 +4,6 @@ import _pickBy from 'lodash/pickBy'
 
 const PROPERTIES_META = Symbol('PROPERTIES_META')
 const DESCENDANTS = Symbol('DESCENDANTS')
-const SEQUENCE = Symbol('SEQUENCE')
 
 type Constructor<T = any> = { new(...args: any[]): T }
 type Factory = Function | Constructor | string
@@ -46,7 +45,13 @@ export function Primed(
 
 export class Base<T, U = undefined>{
   constructor(payload: BaseConstructorPayload<T, U> = {}){
+    this.init(payload)
+  }
+
+  private init(payload: Indexable = {}, stack: string[] = []){
     const primedProperties: PropertiesMeta = Reflect.getMetadata(PROPERTIES_META, this)
+    const newStack = [this.constructor.name, ...stack]
+
     const notPrimed = _pickBy((payload as Indexable), (k: string) => !(k in primedProperties))
     for(const key in notPrimed){
       if(this.hasOwnProperty(key)){
@@ -64,15 +69,22 @@ export class Base<T, U = undefined>{
         factory = descendants[factory]
       }
 
-      if ((payload as Indexable)[key] !== undefined || options.required) {
-        const args = (payload as Indexable)[key] !== undefined ? [(payload as Indexable)[key]] : []
+      const value = (payload as Indexable)[key]
+      if (value !== undefined || options.required) {
         if(factory.prototype instanceof Base){
-          (this as Indexable)[key] = new (factory as Constructor)(...args)
+          // -1 for how many levels we will allow
+          const isCyclic = newStack.slice(0,-1).some(x => x === (factory as Constructor).name)
+          if(!isCyclic || value !== undefined){
+            (this as Indexable)[key] = Object.create(factory.prototype).init(value, newStack)
+          }
         } else {
-          (this as Indexable)[key] = (factory as Function)(...args)
+          const args = value !== undefined ? [value] : []
+          ;(this as Indexable)[key] = (factory as Function)(...args)
         }
       }
     }
+
+    return this
   }
 
   clone(){
