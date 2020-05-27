@@ -46,8 +46,8 @@ export class Foo extends Base<Foo, FooInput>{
   @Primed(Bar)
   bar!: Bar
 
-  @Primed('Baz')
-  baz!: Baz
+  @Primed('Baz', {array: true})
+  baz!: Baz[]
 
   @Primed(Foo)
   parentFoo!: Foo

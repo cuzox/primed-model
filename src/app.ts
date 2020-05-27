@@ -23,6 +23,7 @@ interface Descendants {
 
 class PropertyOptions {
   required?: boolean = true
+  array?: boolean = false
 }
 
 export const Model = (constructor: Function)=>{
@@ -48,9 +49,9 @@ export class Base<T, U = undefined>{
     this.init(payload)
   }
 
-  private init(payload: Indexable = {}, stack: string[] = []){
+  private init(payload: Indexable = {}, trace: string[] = []){
     const primedProperties: PropertiesMeta = Reflect.getMetadata(PROPERTIES_META, this)
-    const newStack = [this.constructor.name, ...stack]
+    const newTrace = [this.constructor.name, ...trace]
 
     const notPrimed = _pickBy((payload as Indexable), (k: string) => !(k in primedProperties))
     for(const key in notPrimed){
@@ -69,18 +70,40 @@ export class Base<T, U = undefined>{
         factory = descendants[factory]
       }
 
+      // -1 for how many levels we will allow
+      const isCyclic = newTrace.slice(0,-1).some(x => x === (factory as Constructor).name)
+      if(isCyclic){
+        continue
+      }
+
       const value = (payload as Indexable)[key]
-      if (value !== undefined || options.required) {
+      if(options.array && value && !Array.isArray(value)){
+        throw Error(`Array expected for field ${key}`)
+      }
+
+      if (value !== undefined) {
+        const values: any = Array.isArray(value) ? value : [value]
+        let instances: any[] = []
         if(factory.prototype instanceof Base){
-          // -1 for how many levels we will allow
-          const isCyclic = newStack.slice(0,-1).some(x => x === (factory as Constructor).name)
-          if(!isCyclic || value !== undefined){
-            (this as Indexable)[key] = Object.create(factory.prototype).init(value, newStack)
-          }
+          instances = values.map((val: any) =>
+            Object.create((factory as Constructor).prototype).init(val, newTrace)
+          )
         } else {
-          const args = value !== undefined ? [value] : []
-          ;(this as Indexable)[key] = (factory as Function)(...args)
+          const getArgs = (value: any) => value !== undefined ? [value] : []
+          instances = values.map((val: any) =>
+            (factory as Function)(...getArgs(val))
+          )
         }
+        (this as Indexable)[key] = options.array ? instances : instances.pop()
+      } else if (options.required){
+        let instance
+        if(factory.prototype instanceof Base){
+          instance = Object.create((factory as Constructor).prototype).init(undefined, newTrace)
+        } else {
+          const getArgs = (value: any) => value !== undefined ? [value] : []
+          instance = (factory as Function)()
+        }
+        (this as Indexable)[key] = options.array ? [instance] : instance
       }
     }
 
