@@ -81,7 +81,8 @@ export class Baz extends Base<Baz>{
   romeo: boolean = false
 }
 
-console.log(new Foo())
+const foo = new Foo({ charlie: 'charlie foo', parentFoo: { charlie: "parent charlie foo"}})
+console.log(foo)
 
 export default {
   Foo,

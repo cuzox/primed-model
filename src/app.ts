@@ -2,13 +2,23 @@ import 'reflect-metadata'
 import _pickBy from 'lodash/pickBy'
 
 
-const PROPERTIES_META = Symbol('PROPERTIES_META')
+const PRIMED_PROPERTIES_META = Symbol('PRIMED_PROPERTIES_META')
 const DESCENDANTS = Symbol('DESCENDANTS')
 
 type Constructor<T = any> = { new(...args: any[]): T }
 type Factory = Function | Constructor | string
 type Indexable = { [key: string]: any }
-type BaseConstructorPayload<T, U = undefined> = Partial<U extends undefined ? T : T | U>
+
+//https://github.com/krzkaczor/ts-essentials
+type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends Array<infer U>
+    ? Array<DeepPartial<U>>
+    : T[P] extends ReadonlyArray<infer U>
+      ? ReadonlyArray<DeepPartial<U>>
+      : DeepPartial<T[P]>
+};
+
+type BaseConstructorPayload<T, U = undefined> = DeepPartial<U extends undefined ? T : T | U>
 
 interface PropertiesMeta {
   [key: string]: {
@@ -26,10 +36,20 @@ class PropertyOptions {
   array?: boolean = false
 }
 
-export const Model = (constructor: Function)=>{
+export function Model<T extends Constructor>(
+  constructor: T
+) {
   const metadata = Reflect.getMetadata(DESCENDANTS, Base.constructor) || {}
   metadata[constructor.name] = constructor
   Reflect.defineMetadata(DESCENDANTS, metadata, Base.constructor)
+
+  return class extends constructor {
+    constructor(...args: any[]){
+      super()
+      // @ts-ignore: init will be inherited from base
+      this.init(args[0], args[1])
+    }
+  }
 }
 
 export function Primed(
@@ -38,25 +58,24 @@ export function Primed(
 ) {
   return (instance: any, propertyKey: string | symbol) => {
     const options = Object.assign(new PropertyOptions(), propertyOptions)
-    const metadata = Reflect.getMetadata(PROPERTIES_META, instance) || {}
+    const metadata = Reflect.getMetadata(PRIMED_PROPERTIES_META, instance) || {}
     metadata[propertyKey] = { factory, options }
-    Reflect.defineMetadata(PROPERTIES_META, metadata, instance)
+    Reflect.defineMetadata(PRIMED_PROPERTIES_META, metadata, instance)
   }
 }
 
 export class Base<T, U = undefined>{
-  constructor(payload: BaseConstructorPayload<T, U> = {}){
-    this.init(payload)
-  }
+  // Method purely for typing purposes
+  constructor(payload: BaseConstructorPayload<T, U> = {}){}
 
   private init(payload: Indexable = {}, trace: string[] = []){
-    const primedProperties: PropertiesMeta = Reflect.getMetadata(PROPERTIES_META, this)
-    const newTrace = [this.constructor.name, ...trace]
+    const primedProperties: PropertiesMeta = Reflect.getMetadata(PRIMED_PROPERTIES_META, this) || {}
+    const updatedTrace = [...trace, this.constructor.name]
+    const notPrimed = _pickBy(payload, (k: string) => !(k in primedProperties))
 
-    const notPrimed = _pickBy((payload as Indexable), (k: string) => !(k in primedProperties))
     for(const key in notPrimed){
       if(this.hasOwnProperty(key)){
-        (this as Indexable)[key]= (payload as Indexable)[key]
+        (this as Indexable)[key]= payload[key]
       }
     }
 
@@ -70,13 +89,7 @@ export class Base<T, U = undefined>{
         factory = descendants[factory]
       }
 
-      // -1 for how many levels we will allow
-      const isCyclic = newTrace.slice(0,-1).some(x => x === (factory as Constructor).name)
-      if(isCyclic){
-        continue
-      }
-
-      const value = (payload as Indexable)[key]
+      const value = payload[key]
       if(options.array && value && !Array.isArray(value)){
         throw Error(`Array expected for field ${key}`)
       }
@@ -86,7 +99,7 @@ export class Base<T, U = undefined>{
         let instances: any[] = []
         if(factory.prototype instanceof Base){
           instances = values.map((val: any) =>
-            Object.create((factory as Constructor).prototype).init(val, newTrace)
+            new (factory as Constructor)().init(val, updatedTrace)
           )
         } else {
           const getArgs = (value: any) => value !== undefined ? [value] : []
@@ -98,9 +111,15 @@ export class Base<T, U = undefined>{
       } else if (options.required){
         let instance
         if(factory.prototype instanceof Base){
-          instance = Object.create((factory as Constructor).prototype).init(undefined, newTrace)
+
+          // -1 because we're allowing 1 cyclic depth
+          const isCyclic = updatedTrace.slice(0,-1).some(x => x === (factory as Constructor).name)
+          if(isCyclic){
+            continue
+          }
+
+          instance = new (factory as Constructor)().init(undefined, updatedTrace)
         } else {
-          const getArgs = (value: any) => value !== undefined ? [value] : []
           instance = (factory as Function)()
         }
         (this as Indexable)[key] = options.array ? [instance] : instance
