@@ -2,10 +2,10 @@
   "name": "ts-model",
   "version": "1.0.0",
   "description": "",
-  "main": "./src/dy-class/base-class.ts",
+  "main": "./src/base-class.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "base": "npx ts-node -P ./tsconfig.json -T ./src/dy-class/base-class.ts",
+    "base": "npx ts-node -P ./tsconfig.json -T ./src/base-class.ts",
     "tsc": "npx tsc -p ./tsconfig.json"
   },
   "keywords": [],
