@@ -112,8 +112,7 @@ export class Base<T, U = undefined>{
         let instance
         if(factory.prototype instanceof Base){
 
-          // -1 because we're allowing 1 cyclic depth
-          const isCyclic = updatedTrace.slice(0,-1).some(x => x === (factory as Constructor).name)
+          const isCyclic = trace.some(x => x === (factory as Constructor).name)
           if(isCyclic){
             continue
           }
