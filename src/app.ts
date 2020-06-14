@@ -128,6 +128,8 @@ export class Base<T, U = undefined>{
           instance = (factory as Function)()
         }
         (this as Indexable)[key] = options.array ? [instance] : instance
+      } else {
+        (this as Indexable)[key] = null
       }
     }
 
