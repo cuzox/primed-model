@@ -93,7 +93,7 @@ export class Base<T, U = undefined>{
       const value = payload[key]
       if(options.array && value && !Array.isArray(value)){
         throw Error(`Array expected for field ${key}`)
-      } else if (!options.array && value && !Array.isArray(value)){
+      } else if (!options.array && value && Array.isArray(value)){
         throw Error(`Array not expected for field ${key}`)
       }
 
