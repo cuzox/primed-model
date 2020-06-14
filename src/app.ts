@@ -112,10 +112,13 @@ export class Base<T, U = undefined>{
         }
         (this as Indexable)[key] = options.array ? instances : instances.pop()
       } else if (options.required){
-        let instance
         if(options.array && !options.populate){
-          instance = []
-        } else if(factory.prototype instanceof Base){
+          (this as Indexable)[key] = []
+          continue
+        }
+
+        let instance
+        if(factory.prototype instanceof Base){
           const isCyclic = trace.some(x => x === (factory as Constructor).name)
           if(isCyclic){
             continue
