@@ -34,6 +34,7 @@ interface Descendants {
 class PropertyOptions {
   required?: boolean = true
   array?: boolean = false
+  populate?: boolean = false
 }
 
 export function Model<T extends Constructor>(
@@ -92,6 +93,8 @@ export class Base<T, U = undefined>{
       const value = payload[key]
       if(options.array && value && !Array.isArray(value)){
         throw Error(`Array expected for field ${key}`)
+      } else if (!options.array && value && !Array.isArray(value)){
+        throw Error(`Array not expected for field ${key}`)
       }
 
       if (value !== undefined) {
@@ -110,13 +113,13 @@ export class Base<T, U = undefined>{
         (this as Indexable)[key] = options.array ? instances : instances.pop()
       } else if (options.required){
         let instance
-        if(factory.prototype instanceof Base){
-
+        if(options.array && !options.populate){
+          instance = []
+        } else if(factory.prototype instanceof Base){
           const isCyclic = trace.some(x => x === (factory as Constructor).name)
           if(isCyclic){
             continue
           }
-
           instance = new (factory as Constructor)().init(undefined, updatedTrace)
         } else {
           instance = (factory as Function)()
