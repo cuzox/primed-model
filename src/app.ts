@@ -11,132 +11,143 @@ type Indexable = { [key: string]: any }
 
 //https://github.com/krzkaczor/ts-essentials
 type DeepPartial<T> = {
-  [P in keyof T]?: T[P] extends Array<infer U>
-    ? Array<DeepPartial<U>>
-    : T[P] extends ReadonlyArray<infer U>
-      ? ReadonlyArray<DeepPartial<U>>
-      : DeepPartial<T[P]>
+	[P in keyof T]?: T[P] extends Array<infer U>
+		? Array<DeepPartial<U>>
+		: T[P] extends ReadonlyArray<infer U>
+			? ReadonlyArray<DeepPartial<U>>
+			: DeepPartial<T[P]>
 };
 
 type BaseConstructorPayload<T, U = undefined> = DeepPartial<U extends undefined ? T : T | U>
 
 interface PropertiesMeta {
-  [key: string]: {
-    factory: Factory
-    options: PropertyOptions
-  }
+	[key: string]: {
+		factory: Factory
+		options: PropertyOptions
+	}
 }
 
 interface Descendants {
-  [key: string]: Constructor
+	[key: string]: Constructor
 }
 
 class PropertyOptions {
-  required?: boolean = true
-  array?: boolean = false
-  populate?: boolean = false
+	required?: boolean = true
+	array?: boolean = false
+	populate?: boolean = false
 }
 
+export function Model(constructor: Constructor): void
+export function Model(name: string): (constructor: Constructor) => void
 export function Model<T extends Constructor>(
-  constructor: T
+	constructorOrName: string | T
 ) {
-  const metadata = Reflect.getMetadata(DESCENDANTS, Base.constructor) || {}
-  metadata[constructor.name] = constructor
-  Reflect.defineMetadata(DESCENDANTS, metadata, Base.constructor)
+	const metadata = Reflect.getMetadata(DESCENDANTS, Base.constructor) || {}
+	const handler = {
+		construct(cls: any, args: any[]) {
+			return Reflect.construct(cls, []).init(args[0])
+		}
+	}
 
-  return class extends constructor {
-    constructor(...args: any[]){
-      super()
-      // @ts-ignore: init will be inherited from base
-      this.init(args[0], args[1])
-    }
-  }
+	if(typeof constructorOrName === 'string'){
+		return (constructor: T) => {
+			metadata[constructorOrName] = constructor
+			Reflect.defineMetadata(DESCENDANTS, metadata, Base.constructor)
+
+			return new Proxy(constructor, handler)
+		}
+	} else {
+		metadata[constructorOrName.name] = constructorOrName
+		Reflect.defineMetadata(DESCENDANTS, metadata, Base.constructor)
+
+		return new Proxy((constructorOrName as object), handler)
+	}
 }
 
 export function Primed(
-  factory: Factory,
-  propertyOptions: PropertyOptions = {}
+	factory: Factory,
+	propertyOptions: PropertyOptions = {}
 ) {
-  return (instance: any, propertyKey: string | symbol) => {
-    const options = Object.assign(new PropertyOptions(), propertyOptions)
-    const metadata = Reflect.getMetadata(PRIMED_PROPERTIES_META, instance) || {}
-    metadata[propertyKey] = { factory, options }
-    Reflect.defineMetadata(PRIMED_PROPERTIES_META, metadata, instance)
-  }
+	return (instance: any, propertyKey: string | symbol) => {
+		const options = Object.assign(new PropertyOptions(), propertyOptions)
+		const metadata = Reflect.getMetadata(PRIMED_PROPERTIES_META, instance) || {}
+		metadata[propertyKey] = { factory, options }
+		Reflect.defineMetadata(PRIMED_PROPERTIES_META, metadata, instance)
+	}
 }
 
 export class Base<T, U = undefined>{
-  // Method purely for typing purposes
-  constructor(payload: BaseConstructorPayload<T, U> = {}){}
+	// Method purely for typing purposes
+	constructor(payload?: BaseConstructorPayload<T, U>){}
 
-  private init(payload: Indexable = {}, trace: string[] = []){
-    const primedProperties: PropertiesMeta = Reflect.getMetadata(PRIMED_PROPERTIES_META, this) || {}
-    const updatedTrace = [...trace, this.constructor.name]
-    const notPrimed = _pickBy(payload, (k: string) => !(k in primedProperties))
+	private init(payload: Indexable = {}, trace: string[] = []){
+		const primedProperties: PropertiesMeta = Reflect.getMetadata(PRIMED_PROPERTIES_META, this) || {}
+		const updatedTrace = [...trace, this.constructor.name]
+		const notPrimed = _pickBy(payload, (k: string) => !(k in primedProperties))
 
-    for(const key in notPrimed){
-      if(this.hasOwnProperty(key)){
-        (this as Indexable)[key]= payload[key]
-      }
-    }
+		for(const key in notPrimed){
+			if(this.hasOwnProperty(key)){
+				(this as Indexable)[key]= payload[key]
+			}
+		}
 
-    for(const key in primedProperties){
-      let { factory, options } = primedProperties[key]
-      if(typeof factory === 'string'){
-        const descendants: Descendants = Reflect.getMetadata(DESCENDANTS, Base.constructor)
-        if(!descendants[factory]){
-          throw Error(`Class ${factory} was never added`)
-        }
-        factory = descendants[factory]
-      }
+		for(const key in primedProperties){
+			let { factory, options } = primedProperties[key]
+			if(typeof factory === 'string'){
+				const descendants: Descendants = Reflect.getMetadata(DESCENDANTS, Base.constructor)
+				if(!descendants[factory]){
+					throw Error(`Class ${factory} was never added`)
+				}
+				factory = descendants[factory]
+			}
 
-      const value = payload[key]
-      if(options.array && value && !Array.isArray(value)){
-        throw Error(`Array expected for field ${key}`)
-      } else if (!options.array && value && Array.isArray(value)){
-        throw Error(`Array not expected for field ${key}`)
-      }
+			const value = payload[key]
+			if(options.array && payload && payload[key] && !Array.isArray(value)){
+				throw Error(`Array expected for field ${key}`)
+			} else if (!options.array && value && Array.isArray(value)){
+				throw Error(`Array not expected for field ${key}`)
+			}
 
-      if (value !== undefined) {
-        const values: any = Array.isArray(value) ? value : [value]
-        let instances: any[] = []
-        if(factory.prototype instanceof Base){
-          instances = values.map((val: any) =>
-            new (factory as Constructor)().init(val, updatedTrace)
-          )
-        } else {
-          const getArgs = (value: any) => value !== undefined ? [value] : []
-          instances = values.map((val: any) =>
-            (factory as Function)(...getArgs(val))
-          )
-        }
-        (this as Indexable)[key] = options.array ? instances : instances.pop()
-      } else if (options.required){
-        if(options.array && !options.populate){
-          (this as Indexable)[key] = []
-          continue
-        }
+			if (value !== undefined && value !== null && options.required) {
+				const values: any = Array.isArray(value) ? value : [value]
+				let instances: any[] = []
+				if(factory.prototype instanceof Base){
+					instances = values.map((val: any) =>
+						Reflect.construct((factory as Constructor), []).init(val, updatedTrace)
+					)
+				} else {
+					const getArgs = (value: any) => value !== undefined ? [value] : []
+					instances = values.map((val: any) =>
+						(factory as Function)(...getArgs(val))
+					)
+				}
+				(this as Indexable)[key] = options.array ? instances : instances.pop()
+			} else if (options.required){
+				if(options.array && !options.populate){
+					(this as Indexable)[key] = []
+					continue
+				}
 
-        let instance
-        if(factory.prototype instanceof Base){
-          const isCyclic = trace.some(x => x === (factory as Constructor).name)
-          if(isCyclic){
-            continue
-          }
-          instance = new (factory as Constructor)().init(undefined, updatedTrace)
-        } else {
-          instance = (factory as Function)()
-        }
-        (this as Indexable)[key] = options.array ? [instance] : instance
-      } else {
-        (this as Indexable)[key] = null
-      }
-    }
+				let instance
+				if(factory.prototype instanceof Base){
+					const isCyclic = trace.some(x => x === (factory as Constructor).name)
+					if(isCyclic){
+						continue
+					}
+					instance = Reflect.construct((factory as Constructor), []).init(undefined, updatedTrace)
+				} else {
+					instance = (factory as Function)()
+				}
+				(this as Indexable)[key] = options.array ? [instance] : instance
+			} else {
+				(this as Indexable)[key] = null
+			}
+		}
 
-    return this
-  }
+		return this
+	}
 
-  clone(){
-    return new (this.constructor as Constructor<T>)(this)
-  }
+	clone<T>(){
+		return Reflect.construct(this.constructor, []).init(this)
+	}
 }

@@ -5,87 +5,87 @@ import { PrimedDate, PrimedDateTime, PrimedDecimal, PrimedId, PrimedUUID } from 
 
 @Model
 export class Bar extends Base<Bar>{
-  @Primed(PrimedDecimal)
-  golf!: Decimal
+	@Primed(PrimedDecimal)
+	golf!: Decimal
 
-  @Primed('Baz')
-  baz!: Baz
+	@Primed('Baz')
+	baz!: Baz
 
-  hotel: number = 2
-  india: string = "4"
-  juliet: string = "4"
-  kilo: boolean = false
-  lima: boolean = false
+	hotel: number = 2
+	india: string = "4"
+	juliet: string = "4"
+	kilo: boolean = false
+	lima: boolean = false
 }
 
 interface FooInput{
-  number: number,
-  someDate: string,
-  someOtherDate: string,
+	number: number,
+	someDate: string,
+	someOtherDate: string,
 }
 
 @Model
 export class Foo extends Base<Foo, FooInput>{
-  @Primed(PrimedId)
-  id!: string
+	@Primed(PrimedId)
+	id!: string
 
-  charlie: string = ""
-  delta: string = "4"
-  echo: boolean = false
-  foxtrot: boolean = true
+	charlie: string = ""
+	delta: string = "4"
+	echo: boolean = false
+	foxtrot: boolean = true
 
-  @Primed(PrimedDecimal)
-  number!: Decimal
+	@Primed(PrimedDecimal)
+	number!: Decimal
 
-  @Primed(PrimedDateTime)
-  someDate!: DateTime
+	@Primed(PrimedDateTime)
+	someDate!: DateTime
 
-  @Primed(PrimedDate)
-  someOtherDate!: Date
+	@Primed(PrimedDate)
+	someOtherDate!: Date
 
-  @Primed(Bar)
-  bar!: Bar
+	@Primed(Bar)
+	bar!: Bar
 
-  @Primed('Baz', {array: true})
-  baz!: Baz[]
+	@Primed('Baz', {array: true})
+	baz!: Baz[]
 
-  @Primed(Foo)
-  parentFoo!: Foo
+	@Primed(Foo)
+	parentFoo!: Foo
 
-  @Primed('Baz', {required: false})
-  otherBaz?: Baz
+	@Primed('Baz', {required: false})
+	otherBaz?: Baz
 
-  get total(){
-    return this.number.plus(this.bar.golf)
-  }
+	get total(){
+		return this.number.plus(this.bar.golf)
+	}
 
-  run(){
+	run(){
 
-  }
+	}
 }
 
 @Model
 export class Baz extends Base<Baz>{
-  @Primed(PrimedDecimal)
-  mike!: Decimal
+	@Primed(PrimedDecimal)
+	mike!: Decimal
 
-  @Primed(PrimedDecimal)
-  november!: Decimal
+	@Primed(PrimedDecimal)
+	november!: Decimal
 
-  @Primed(Bar)
-  bar!: Bar
+	@Primed(Bar)
+	bar!: Bar
 
-  oscar: string = ""
-  papa: string = "4"
-  quebec?: boolean
-  romeo: boolean = false
+	oscar: string = ""
+	papa: string = "4"
+	quebec?: boolean
+	romeo: boolean = false
 }
 
 const foo = new Foo({ charlie: 'charlie foo', parentFoo: { charlie: "parent charlie foo"}})
 console.log(foo)
 
 export default {
-  Foo,
-  Bar,
-  Baz,
+	Foo,
+	Bar,
+	Baz,
 }
