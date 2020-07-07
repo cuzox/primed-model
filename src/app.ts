@@ -44,7 +44,7 @@ export function Model<T extends Constructor>(
 	const metadata = Reflect.getMetadata(DESCENDANTS, Base.constructor) || {}
 	const handler = {
 		construct(cls: any, args: any[]) {
-			return Reflect.construct(cls, []).init(args[0])
+			return Reflect.construct(cls, []).init(...args)
 		}
 	}
 
@@ -79,11 +79,10 @@ export class Base<T, U = undefined>{
 	// Method purely for typing purposes
 	constructor(payload?: BaseConstructorPayload<T, U>){}
 
-	private init(payload: Indexable = {}, trace: WeakSet<object> = new WeakSet()){
+	private init(payload: Indexable = {}, trace: Set<Constructor> = new Set()){
 		const primedProperties: PropertiesMeta = Reflect.getMetadata(PRIMED_PROPERTIES_META, this) || {}
-		const updatedTrace = new WeakSet(trace as any)
-		updatedTrace.add(this.constructor)
-		const notPrimed = _pickBy(payload, (k: string) => !(k in primedProperties))
+		const updatedTrace = new Set(trace).add(this.constructor as Constructor)
+		const notPrimed = _pickBy(payload, (val: any, k: string) => !(k in primedProperties))
 
 		for(const key in notPrimed){
 			if(this.hasOwnProperty(key)){
@@ -113,7 +112,7 @@ export class Base<T, U = undefined>{
 				let instances: any[] = []
 				if(factory.prototype instanceof Base){
 					instances = values.map((val: any) =>
-						Reflect.construct((factory as Constructor), []).init(val, updatedTrace)
+						Reflect.construct((factory as Constructor), [val, updatedTrace])
 					)
 				} else {
 					const getArgs = (value: any) => value !== undefined ? [value] : []
@@ -125,11 +124,11 @@ export class Base<T, U = undefined>{
 			} else if (options.required){
 				let instance
 				if(factory.prototype instanceof Base){
-					const isCyclic = trace.has(factory as Constructor)
+					const isCyclic = updatedTrace.has(factory as Constructor)
 					if(isCyclic){
 						continue
 					}
-					instance = Reflect.construct((factory as Constructor), []).init(undefined, updatedTrace)
+					instance = Reflect.construct((factory as Constructor), [undefined, updatedTrace])
 				} else {
 					instance = (factory as Function)()
 				}
