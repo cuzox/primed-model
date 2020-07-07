@@ -34,7 +34,6 @@ interface Descendants {
 class PropertyOptions {
 	required?: boolean = true
 	array?: boolean = false
-	populate?: boolean = false
 }
 
 export function Model(constructor: Constructor): void
@@ -80,9 +79,10 @@ export class Base<T, U = undefined>{
 	// Method purely for typing purposes
 	constructor(payload?: BaseConstructorPayload<T, U>){}
 
-	private init(payload: Indexable = {}, trace: string[] = []){
+	private init(payload: Indexable = {}, trace: WeakSet<object> = new WeakSet()){
 		const primedProperties: PropertiesMeta = Reflect.getMetadata(PRIMED_PROPERTIES_META, this) || {}
-		const updatedTrace = [...trace, this.constructor.name]
+		const updatedTrace = new WeakSet(trace as any)
+		updatedTrace.add(this.constructor)
 		const notPrimed = _pickBy(payload, (k: string) => !(k in primedProperties))
 
 		for(const key in notPrimed){
@@ -108,7 +108,7 @@ export class Base<T, U = undefined>{
 				throw Error(`Array not expected for field ${key}`)
 			}
 
-			if (value !== undefined && value !== null && options.required) {
+			if (value !== undefined && value !== null) {
 				const values: any = Array.isArray(value) ? value : [value]
 				let instances: any[] = []
 				if(factory.prototype instanceof Base){
@@ -123,14 +123,9 @@ export class Base<T, U = undefined>{
 				}
 				(this as Indexable)[key] = options.array ? instances : instances.pop()
 			} else if (options.required){
-				if(options.array && !options.populate){
-					(this as Indexable)[key] = []
-					continue
-				}
-
 				let instance
 				if(factory.prototype instanceof Base){
-					const isCyclic = trace.some(x => x === (factory as Constructor).name)
+					const isCyclic = trace.has(factory as Constructor)
 					if(isCyclic){
 						continue
 					}
@@ -139,6 +134,8 @@ export class Base<T, U = undefined>{
 					instance = (factory as Function)()
 				}
 				(this as Indexable)[key] = options.array ? [instance] : instance
+			} else if (options.array) {
+				(this as Indexable)[key] = []
 			} else {
 				(this as Indexable)[key] = null
 			}
@@ -147,7 +144,7 @@ export class Base<T, U = undefined>{
 		return this
 	}
 
-	clone<T>(){
+	clone(): T{
 		return Reflect.construct(this.constructor, []).init(this)
 	}
 }
