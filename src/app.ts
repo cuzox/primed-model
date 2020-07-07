@@ -42,24 +42,33 @@ export function Model<T extends Constructor>(
 	constructorOrName: string | T
 ) {
 	const metadata = Reflect.getMetadata(DESCENDANTS, Base.constructor) || {}
-	const handler = {
-		construct(cls: any, args: any[]) {
-			return Reflect.construct(cls, []).init(...args)
-		}
-	}
 
 	if(typeof constructorOrName === 'string'){
 		return (constructor: T) => {
-			metadata[constructorOrName] = constructor
+			const extended = class extends constructor {
+				constructor(...args: any[]){
+					super()
+					this.init(args[0], args[1])
+				}
+			}
+
+			metadata[constructorOrName] = extended
 			Reflect.defineMetadata(DESCENDANTS, metadata, Base.constructor)
 
-			return new Proxy(constructor, handler)
+			return extended
 		}
 	} else {
-		metadata[constructorOrName.name] = constructorOrName
+		const extended = class extends constructorOrName {
+			constructor(...args: any[]){
+				super()
+				this.init(args[0], args[1])
+			}
+		}
+
+		metadata[constructorOrName.name] = extended
 		Reflect.defineMetadata(DESCENDANTS, metadata, Base.constructor)
 
-		return new Proxy((constructorOrName as object), handler)
+		return extended
 	}
 }
 
@@ -144,6 +153,6 @@ export class Base<T, U = undefined>{
 	}
 
 	clone(): T{
-		return Reflect.construct(this.constructor, []).init(this)
+		return Reflect.construct(this.constructor, [this])
 	}
 }
