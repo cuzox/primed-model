@@ -1,34 +1,35 @@
 {
-  "name": "ts-model",
-  "version": "1.0.0",
-  "description": "",
-  "main": "./src/base-class.ts",
+  "name": "primed-model",
+  "version": "0.3.1",
+  "description": "TypeScript model management",
+  "main": "./src/app.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "base": "npx ts-node -P ./tsconfig.json -T ./src/base-class.ts",
     "tsc": "npx tsc -p ./tsconfig.json"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "TypeScript",
+    "model",
+    "recursive",
+    "cyclic"
+  ],
+  "author": "cuzox",
+  "license": "MIT",
   "devDependencies": {
-    "@types/axios": "^0.14.0",
-    "@types/lodash": "^4.14.151",
-    "@types/luxon": "^1.24.0",
     "@types/reflect-metadata": "^0.1.0",
     "ts-node": "^8.10.1",
-    "typescript": "^3.9.2"
+    "typescript": "^3.9.2",
+    "tslib": "^2.0.0"
   },
   "dependencies": {
-    "@types/decimal.js": "^7.4.0",
-    "@types/uuid": "^7.0.3",
-    "axios": "^0.19.2",
-    "core-js": "^3.6.5",
-    "decimal.js": "^10.2.0",
-    "lodash": "^4.17.15",
-    "luxon": "^1.24.1",
-    "reflect-metadata": "^0.1.13",
-    "tslib": "^2.0.0",
-    "uuid": "^8.0.0"
-  }
+    "reflect-metadata": "^0.1.13"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cuzox/primed-model.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cuzox/primed-model/issues"
+  },
+  "homepage": "https://github.com/cuzox/primed-model#readme"
 }
