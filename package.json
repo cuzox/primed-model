@@ -1,6 +1,6 @@
 {
   "name": "primed-model",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "TypeScript model management",
   "main": "./src/app.ts",
   "scripts": {
@@ -17,7 +17,6 @@
   "license": "MIT",
   "devDependencies": {
     "@types/reflect-metadata": "^0.1.0",
-    "ts-node": "^8.10.1",
     "typescript": "^3.9.2",
     "tslib": "^2.0.0"
   },
