@@ -1,8 +1,9 @@
 {
   "name": "primed-model",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "TypeScript model management",
-  "main": "./src/app.ts",
+  "main": "dist/app.js",
+  "types": "dist/app.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "tsc": "npx tsc -p ./tsconfig.json"
@@ -11,7 +12,8 @@
     "TypeScript",
     "model",
     "recursive",
-    "cyclic"
+    "cyclic",
+    "self-referencing"
   ],
   "author": "cuzox",
   "license": "MIT",

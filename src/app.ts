@@ -1,16 +1,15 @@
 import 'reflect-metadata'
-import _pickBy from 'lodash/pickBy'
 
 
 const PRIMED_PROPERTIES_META = Symbol('PRIMED_PROPERTIES_META')
 const DESCENDANTS = Symbol('DESCENDANTS')
 
-type Constructor<T = any> = { new(...args: any[]): T }
-type Factory = Function | Constructor | string
-type Indexable = { [key: string]: any }
+export type Constructor<T = any> = { new(...args: any[]): T }
+export type Factory = Function | Constructor | string
+export type Indexable = { [key: string]: any }
 
 //https://github.com/krzkaczor/ts-essentials
-type DeepPartial<T> = {
+export type DeepPartial<T> = {
 	[P in keyof T]?: T[P] extends Array<infer U>
 		? Array<DeepPartial<U>>
 		: T[P] extends ReadonlyArray<infer U>
@@ -18,20 +17,20 @@ type DeepPartial<T> = {
 			: DeepPartial<T[P]>
 };
 
-type BaseConstructorPayload<T, U = undefined> = DeepPartial<U extends undefined ? T : T | U>
+export type BaseConstructorPayload<T, U = undefined> = DeepPartial<U extends undefined ? T : T | U>
 
-interface PropertiesMeta {
+export interface PropertiesMeta {
 	[key: string]: {
 		factory: Factory
 		options: PropertyOptions
 	}
 }
 
-interface Descendants {
+export interface Descendants {
 	[key: string]: Constructor
 }
 
-class PropertyOptions {
+export class PropertyOptions {
 	required?: boolean = true
 	array?: boolean = false
 }
@@ -91,9 +90,9 @@ export class Base<T, U = undefined>{
 	private init(payload: Indexable = {}, trace: Set<Constructor> = new Set()){
 		const primedProperties: PropertiesMeta = Reflect.getMetadata(PRIMED_PROPERTIES_META, this) || {}
 		const updatedTrace = new Set(trace).add(this.constructor as Constructor)
-		const notPrimed = _pickBy(payload, (val: any, k: string) => !(k in primedProperties))
+		const notPrimed = Object.keys(payload).reduce((acc, key) => key in primedProperties ? acc : [...acc, key], [] as string[])
 
-		for(const key in notPrimed){
+		for(const key of notPrimed){
 			if(this.hasOwnProperty(key)){
 				(this as Indexable)[key]= payload[key]
 			}

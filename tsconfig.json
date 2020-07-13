@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
-    "outDir": "dist",
     "target": "esnext",
     "module": "commonjs",
     "strict": true,
+    "outDir": "dist",
+    "declaration": true,
     "importHelpers": true,
     "moduleResolution": "node",
     "experimentalDecorators": true,
@@ -11,17 +12,18 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "types": [
-      "reflect-metadata",
+      "reflect-metadata"
     ],
     "lib": [
       "esnext",
-      "dom",
-    ],
+      "dom"
+    ]
   },
   "include":[
     "src/**/*"
   ],
   "exclude":[
-    "node_modules"
-  ],
+    "node_modules",
+    "dist"
+  ]
 }
