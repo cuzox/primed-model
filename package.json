@@ -1,6 +1,6 @@
 {
   "name": "primed-model",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "TypeScript model management",
   "main": "dist/app.js",
   "types": "dist/app.d.ts",
