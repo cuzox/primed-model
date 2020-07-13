@@ -2,7 +2,8 @@ import 'reflect-metadata'
 
 
 const PRIMED_PROPERTIES_META = Symbol('PRIMED_PROPERTIES_META')
-const DESCENDANTS = Symbol('DESCENDANTS')
+const CLASS_NAME_MAPPING = Symbol('CLASS_NAME_MAPPING')
+const CLASS_NAME = Symbol('CLASS_NAME')
 
 export type Constructor<T = any> = { new(...args: any[]): T }
 export type Factory = Function | Constructor | string
@@ -26,7 +27,7 @@ export interface PropertiesMeta {
 	}
 }
 
-export interface Descendants {
+export interface ClassNameMapping {
 	[key: string]: Constructor
 }
 
@@ -40,7 +41,7 @@ export function Model(name: string): (constructor: Constructor) => void
 export function Model<T extends Constructor>(
 	constructorOrName: string | T
 ) {
-	const metadata = Reflect.getMetadata(DESCENDANTS, Base.constructor) || {}
+	const classNameMappingMetadata = Reflect.getMetadata(CLASS_NAME_MAPPING, Base.constructor) || {}
 
 	if(typeof constructorOrName === 'string'){
 		return (constructor: T) => {
@@ -51,9 +52,10 @@ export function Model<T extends Constructor>(
 				}
 			}
 
-			metadata[constructorOrName] = _class
-			Reflect.defineMetadata(DESCENDANTS, metadata, Base.constructor)
 
+			classNameMappingMetadata[constructorOrName] = _class
+			Reflect.defineMetadata(CLASS_NAME_MAPPING, classNameMappingMetadata, Base.constructor)
+			Reflect.defineMetadata(CLASS_NAME, constructorOrName, constructor)
 			return _class
 		}
 	} else {
@@ -64,9 +66,10 @@ export function Model<T extends Constructor>(
 			}
 		}
 
-		metadata[constructorOrName.name] = _class
-		Reflect.defineMetadata(DESCENDANTS, metadata, Base.constructor)
 
+		classNameMappingMetadata[constructorOrName.name] = _class
+		Reflect.defineMetadata(CLASS_NAME_MAPPING, classNameMappingMetadata, Base.constructor)
+		Reflect.defineMetadata(CLASS_NAME, constructorOrName.name, constructorOrName)
 		return _class
 	}
 }
@@ -88,10 +91,10 @@ export class Base<T, U = undefined>{
 	// Method purely for typing purposes
 	constructor(payload?: BaseConstructorPayload<T, U>) {}
 
-	private init(payload: Indexable = {}, trace: Set<Constructor> = new Set()) {
+	private init(payload: Indexable = {}, trace: Set<Constructor | string> = new Set()) {
 		this.makeEnumerableGetters(this)
 		const primedProperties: PropertiesMeta = Reflect.getMetadata(PRIMED_PROPERTIES_META, this) || {}
-		const updatedTrace = new Set(trace).add(this.constructor as Constructor)
+		const updatedTrace = new Set(trace).add(trace.size ? this.constructor as Constructor : 'STUB')
 		const notPrimed = Object.keys(payload).reduce((acc, key) => key in primedProperties ? acc : [...acc, key], [] as string[])
 
 		for(const key of notPrimed){
@@ -103,12 +106,13 @@ export class Base<T, U = undefined>{
 
 		for(const key in primedProperties){
 			let { factory, options } = primedProperties[key]
-			if(typeof factory === 'string'){
-				const descendants: Descendants = Reflect.getMetadata(DESCENDANTS, Base.constructor)
-				if(!descendants[factory]){
-					throw Error(`Class ${factory} was never added`)
-				}
-				factory = descendants[factory]
+			const classNameMappingMedatada: ClassNameMapping = Reflect.getMetadata(CLASS_NAME_MAPPING, Base.constructor)
+			const factoryIsString = typeof factory === 'string'
+			const factoryExtendsBase = !factoryIsString && (factory as Constructor).prototype instanceof Base
+			const factoryName = (factoryIsString || !factoryExtendsBase) ? factory : Reflect.getMetadata(CLASS_NAME, factory)
+			factory = classNameMappingMedatada[factoryName]
+			if(!factory){
+				throw Error(`Class ${factoryName} was never added`)
 			}
 
 			const value = payload[key]
@@ -137,6 +141,7 @@ export class Base<T, U = undefined>{
 				if(factory.prototype instanceof Base){
 					const isCyclic = updatedTrace.has(factory as Constructor)
 					if(isCyclic){
+						(this as Indexable)[key] = undefined
 						continue
 					}
 					instance = Reflect.construct((factory as Constructor), [undefined, updatedTrace])
