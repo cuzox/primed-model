@@ -109,10 +109,12 @@ export class Base<T, U = undefined>{
 			const classNameMappingMedatada: ClassNameMapping = Reflect.getMetadata(CLASS_NAME_MAPPING, Base.constructor)
 			const factoryIsString = typeof factory === 'string'
 			const factoryExtendsBase = !factoryIsString && (factory as Constructor).prototype instanceof Base
-			const factoryName = (factoryIsString || !factoryExtendsBase) ? factory : Reflect.getMetadata(CLASS_NAME, factory)
-			factory = classNameMappingMedatada[factoryName]
-			if(!factory){
-				throw Error(`Class ${factoryName} was never added`)
+			if(factoryIsString || factoryExtendsBase){
+				const factoryName = factoryIsString ? factory : Reflect.getMetadata(CLASS_NAME, factory)
+				factory = classNameMappingMedatada[factoryName]
+				if(!factory){
+					throw Error(`Class ${factoryName} was never added`)
+				}
 			}
 
 			const value = payload[key]
@@ -125,7 +127,7 @@ export class Base<T, U = undefined>{
 			if (value !== undefined && value !== null) {
 				const values: any = Array.isArray(value) ? value : [value]
 				let instances: any[] = []
-				if(factory.prototype instanceof Base){
+				if((factory as Constructor).prototype instanceof Base){
 					instances = values.map((val: any) =>
 						Reflect.construct((factory as Constructor), [val, updatedTrace])
 					)
@@ -138,7 +140,7 @@ export class Base<T, U = undefined>{
 				(this as Indexable)[key] = options.array ? instances : instances.pop()
 			} else if (options.required){
 				let instance
-				if(factory.prototype instanceof Base){
+				if((factory as Constructor).prototype instanceof Base){
 					const isCyclic = updatedTrace.has(factory as Constructor)
 					if(isCyclic){
 						(this as Indexable)[key] = undefined
