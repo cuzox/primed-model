@@ -44,30 +44,30 @@ export function Model<T extends Constructor>(
 
 	if(typeof constructorOrName === 'string'){
 		return (constructor: T) => {
-			const extended = class extends constructor {
+			const _class = class extends constructor {
 				constructor(...args: any[]){
 					super()
 					this.init(args[0], args[1])
 				}
 			}
 
-			metadata[constructorOrName] = extended
+			metadata[constructorOrName] = _class
 			Reflect.defineMetadata(DESCENDANTS, metadata, Base.constructor)
 
-			return extended
+			return _class
 		}
 	} else {
-		const extended = class extends constructorOrName {
+		const _class = class extends constructorOrName {
 			constructor(...args: any[]){
 				super()
 				this.init(args[0], args[1])
 			}
 		}
 
-		metadata[constructorOrName.name] = extended
+		metadata[constructorOrName.name] = _class
 		Reflect.defineMetadata(DESCENDANTS, metadata, Base.constructor)
 
-		return extended
+		return _class
 	}
 }
 
@@ -83,17 +83,20 @@ export function Primed(
 	}
 }
 
+
 export class Base<T, U = undefined>{
 	// Method purely for typing purposes
-	constructor(payload?: BaseConstructorPayload<T, U>){}
+	constructor(payload?: BaseConstructorPayload<T, U>) {}
 
-	private init(payload: Indexable = {}, trace: Set<Constructor> = new Set()){
+	private init(payload: Indexable = {}, trace: Set<Constructor> = new Set()) {
+		this.makeEnumerableGetters(this)
 		const primedProperties: PropertiesMeta = Reflect.getMetadata(PRIMED_PROPERTIES_META, this) || {}
 		const updatedTrace = new Set(trace).add(this.constructor as Constructor)
 		const notPrimed = Object.keys(payload).reduce((acc, key) => key in primedProperties ? acc : [...acc, key], [] as string[])
 
 		for(const key of notPrimed){
-			if(this.hasOwnProperty(key)){
+			const desc = Object.getOwnPropertyDescriptor(this, key)
+			if(this.hasOwnProperty(key) && (!desc || desc.writable === true || typeof desc.set === 'function')){
 				(this as Indexable)[key]= payload[key]
 			}
 		}
@@ -151,7 +154,20 @@ export class Base<T, U = undefined>{
 		return this
 	}
 
-	clone(): T{
+	private makeEnumerableGetters(instance: any){
+		for (let o = instance; o != Object.prototype; o = Object.getPrototypeOf(o)) {
+			for (let name of Object.getOwnPropertyNames(o)) {
+				const desc = Object.getOwnPropertyDescriptor(o, name) || {}
+				const hasGetter = typeof desc.get === 'function'
+				if (hasGetter) {
+					desc.enumerable = true
+					Object.defineProperty(instance, name, desc)
+				}
+			}
+		}
+	}
+
+	clone(): T {
 		return Reflect.construct(this.constructor, [this])
 	}
 }
