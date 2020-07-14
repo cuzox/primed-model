@@ -5,11 +5,10 @@ Dynamically create your instances from JSON objects to take full advantage of OO
 
 **Note**: This project uses reflect-metadata for storing metadata in classes and properties
 
-## Provided resources
+## Model definition
 - `Model` <*decorator*> - To register the classes
 - `Primed` <*decorator*> - To mark properties to be dynamically instantiated
 - `Base` <*class*> - To extend the models, configure their constructor's typing, and give internal functionality
-
 
 ```typescript
 @Model
@@ -36,16 +35,6 @@ class Cat extends Base<Cat>{
 }
 ```
 **Note**: `Cat` is being passed to the `Primed` decorator as a *string* in the `Person` class because TS/JS does not allow classes which haven't been defined to be referenced by value
-
-
-## Features
-
-- Recursively and dynamically create model instances, automatically instantiated by default, unless `required: false` is specified in the `Primed` options
-- Specify properties for classes defined after the point of reference passing a string to `Primed`
-- Pass a factory function to `Primed` for custom data types
-- Getters are enumerable by default so that they show when iterating over the keys or in the string representation of your class (using `JSON.stringify`)
-- Provided `clone` method for copying whole instances
-
 
 ## Example usage
 ### Initializing with empty constructor
@@ -131,9 +120,13 @@ new Person({
 }
 ```
 
-</td>
-</tr>
-</table>
+## Features
+
+- Recursively and dynamically create model instances, automatically instantiated by default, unless `required: false` is specified in the `Primed` options
+- Specify properties for classes defined after the point of reference passing a string to `Primed`
+- Pass a factory function to `Primed` for custom data types
+- Getters are enumerable by default so that they show when iterating over the keys or in the string representation of your class (using `JSON.stringify`)
+- Provided `clone` method for copying whole instances
 
 ## Custom properties examples
 
@@ -203,7 +196,7 @@ function PrimedId(value?: string): string {
 
 
 ## Noteworthy
-- If you're minifying/compressing/uglyfing your JS, you must pass a string to the `Model` decorator with the name or the class. The function name is being relied uppon for initializing properties that depend on it at runtime
+- If you're minifying/compressing/uglyfing your JS, you must pass a string to the `Model` decorator with the name of the class. The function name is being relied uppon for initializing properties that depend on it at runtime
     ```typescript
     @Model('Foo')
     class Foo extends Base<Foo>{
