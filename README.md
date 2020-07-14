@@ -1,7 +1,7 @@
 # primed-model
 
-![npm](https://img.shields.io/npm/v/primed-model)
-![NPM](https://img.shields.io/npm/l/primed-model)
+[![npm](https://img.shields.io/npm/v/primed-model?style=flat-square)](https://www.npmjs.com/package/primed-model)
+[![NPM](https://img.shields.io/npm/l/primed-model?style=flat-square)](https://github.com/cuzox/primed-model/blob/master/LICENSE)
 
 Hassle free TypeScript model management
 
