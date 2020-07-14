@@ -44,49 +44,17 @@ class Cat extends Base<Cat>{
 - Specify properties for classes defined after the point of reference passing a string to `Primed`
 - Pass a factory function to `Primed` for custom data types
 - Getters are enumerable by default so that they show when iterating over the keys or in the string representation of your class (using `JSON.stringify`)
-- Providced `clone` method for copying whole instances
+- Provided `clone` method for copying whole instances
 
 
 ## Example usage
-
-<table>
-<tr>
-<th> Code </th>
-<th> Output </th>
-</tr>
-<tr>
-<td>
+### Initializing with empty constructor
 
 ```javascript
 new Person()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ```
 
-</td>
-<td>
-
+#### Output
 ```javascript
 {
     name: "",
@@ -114,11 +82,7 @@ new Person()
 }
 ```
 
-</td>
-</tr>
-<tr>
-<td>
-
+### Passing JSON to constructor
 ```javascript
 new Person({
     name: "Alice",
@@ -137,18 +101,9 @@ new Person({
         ]
     }
 })
-
-
-
-
-
-
-
 ```
 
-</td>
-<td>
-
+#### Output
 ```javascript
 {
     name: "Alice",
@@ -201,7 +156,7 @@ function PrimedDateTime(value?: string | DateTime): DateTime {
 }
 
 @Model
-class Foo extends Base<Foo, FooInput>{
+class Foo extends Base<Foo>{
     @Primed(PrimedDateTime)
     someDateTime!: DateTime
 }
@@ -292,14 +247,6 @@ function PrimedId(value?: string): string {
     ```
 - Auto initialization will stop after detecting a circular reference
 
-    <table>
-    <tr>
-    <th> Code </th>
-    <th> Output </th>
-    </tr>
-    <tr>
-    <td>
-
     ```typescript
     @Model
     class Alpha extends Base<Alpha> {
@@ -322,8 +269,7 @@ function PrimedId(value?: string): string {
     new Alpha()
     ```
 
-    </td>
-    <td>
+    #### Output
 
     ```javascript
     {
@@ -335,21 +281,7 @@ function PrimedId(value?: string): string {
             }
         }
     }
-
-
-
-
-
-
-
-
-
-
     ```
-
-    </td>
-    </tr>
-    </table>
 
 ## To do
 
