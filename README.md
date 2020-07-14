@@ -1,4 +1,8 @@
-# Primed Model
+# primed-model
+
+![npm](https://img.shields.io/npm/v/primed-model)
+![NPM](https://img.shields.io/npm/l/primed-model)
+
 Hassle free TypeScript model management
 
 Dynamically create your instances from JSON objects to take full advantage of OOP. This approach is to be contrasted with factory functions for managing highly structured data
